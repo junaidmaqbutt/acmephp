@@ -76,11 +76,8 @@ class AcmeClient implements AcmeClientInterface
     /**
      * {@inheritdoc}
      */
-    public function registerAccount(string $agreement = null, string $email = null): array
+    public function registerAccount(string $email = null, string $eabKid = null): array
     {
-        Assert::nullOrString($agreement, 'registerAccount::$agreement expected a string or null. Got: %s');
-        Assert::nullOrString($email, 'registerAccount::$email expected a string or null. Got: %s');
-
         $payload = [
             'termsOfServiceAgreed' => true,
             'contact' => [],
@@ -141,8 +138,6 @@ class AcmeClient implements AcmeClientInterface
      */
     public function finalizeOrder(CertificateOrder $order, CertificateRequest $csr, int $timeout = 180): CertificateResponse
     {
-        Assert::integer($timeout, 'finalizeOrder::$timeout expected an integer. Got: %s');
-
         $endTime = time() + $timeout;
         $client = $this->getHttpClient();
         $orderEndpoint = $order->getOrderEndpoint();
@@ -207,8 +202,6 @@ class AcmeClient implements AcmeClientInterface
      */
     public function challengeAuthorization(AuthorizationChallenge $challenge, int $timeout = 180): array
     {
-        Assert::integer($timeout, 'challengeAuthorization::$timeout expected an integer. Got: %s');
-
         $endTime = time() + $timeout;
         $client = $this->getHttpClient();
         $challengeUrl = $challenge->getUrl();
@@ -239,7 +232,6 @@ class AcmeClient implements AcmeClientInterface
     public function requestCertificate(string $domain, CertificateRequest $csr, int $timeout = 180): CertificateResponse
     {
         Assert::stringNotEmpty($domain, 'requestCertificate::$domain expected a non-empty string. Got: %s');
-        Assert::integer($timeout, 'requestCertificate::$timeout expected an integer. Got: %s');
 
         $order = $this->requestOrder(array_unique(array_merge([$domain], $csr->getDistinguishedName()->getSubjectAlternativeNames())));
 

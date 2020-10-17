@@ -130,7 +130,7 @@ EOF
         $this->output->writeln('<info>Registering on the ACME server...</info>');
 
         try {
-            $client->registerAccount(null, $email);
+            $client->registerAccount($email);
             $this->output->writeln('<info>Account registered successfully!</info>');
         } catch (MalformedServerException $e) {
             $this->output->writeln('<info>Account already registered!</info>');
