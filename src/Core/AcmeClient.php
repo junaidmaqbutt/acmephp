@@ -78,18 +78,29 @@ class AcmeClient implements AcmeClientInterface
      */
     public function registerAccount(string $email = null, string $eabKid = null): array
     {
+        $client = $this->getHttpClient();
+
         $payload = [
             'termsOfServiceAgreed' => true,
             'contact' => [],
         ];
 
-        if (\is_string($email)) {
+        if ($email) {
             $payload['contact'][] = 'mailto:'.$email;
         }
 
+        if ($eabKid) {
+            $payload['externalAccountBinding'] = $client->signKidPayload(
+                $this->getResourceUrl(ResourcesDirectory::NEW_ACCOUNT),
+                $eabKid,
+                null
+            );
+        }
+
+        dump($payload);exit;
+
         $this->requestResource('POST', ResourcesDirectory::NEW_ACCOUNT, $payload);
         $account = $this->getResourceAccount();
-        $client = $this->getHttpClient();
 
         return $client->request('POST', $account, $client->signKidPayload($account, $account, null));
     }
