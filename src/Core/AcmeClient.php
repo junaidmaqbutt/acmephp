@@ -97,7 +97,7 @@ class AcmeClient implements AcmeClientInterface
             );
         }
 
-        dump($payload);exit;
+        dump($eabKid);exit;
 
         $this->requestResource('POST', ResourcesDirectory::NEW_ACCOUNT, $payload);
         $account = $this->getResourceAccount();

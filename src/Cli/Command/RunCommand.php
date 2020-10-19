@@ -13,6 +13,7 @@ namespace AcmePhp\Cli\Command;
 
 use AcmePhp\Cli\Command\Helper\KeyOptionCommandTrait;
 use AcmePhp\Cli\Configuration\DomainConfiguration;
+use AcmePhp\Cli\Exception\AcmeCliException;
 use AcmePhp\Core\Challenge\ConfigurableServiceInterface;
 use AcmePhp\Core\Challenge\MultipleChallengesSolverInterface;
 use AcmePhp\Core\Challenge\SolverInterface;
@@ -148,20 +149,37 @@ class RunCommand extends AbstractCommand
             return null;
         }
 
-        Assert::stringNotEmpty(
-            $this->config['zerossl_api_key'],
-            'When using ZeroSSL as a provider, you need to provide an API key. Register on https://zerossl.com '.
-            'and provide your ZeroSSL API key as a "zerossl_api_key" option in your configuration file.'
-        );
+        // If an API is provided, use it
+        if ($this->config['zerossl_api_key']) {
+            $eabCredentials = \GuzzleHttp\json_decode(
+                (new Client())
+                    ->post('https://api.zerossl.com/acme/eab-credentials/?access_key='.$this->config['zerossl_api_key'])
+                    ->getBody()
+                    ->getContents()
+            );
 
+            if (!isset($eabCredentials->success) || !$eabCredentials->success) {
+                throw new AcmeCliException('ZeroSSL External account Binding failed: are you sure your API key is valid?');
+            }
+
+            return $eabCredentials->eab_kid;
+        }
+
+        // Otherwise register on the fly
         $eabCredentials = \GuzzleHttp\json_decode(
             (new Client())
-                ->get('https://api.zerossl.com/acme/eab-credentials/?access_key='.$this->config['zerossl_api_key'])
+                ->post('https://api.zerossl.com/acme/eab-credentials-email', [
+                    'form_params' => ['email' => $this->config['contact_email']],
+                ])
                 ->getBody()
                 ->getContents()
         );
 
-        dump($eabCredentials);exit;
+        if (!isset($eabCredentials->success) || !$eabCredentials->success) {
+            throw new AcmeCliException('ZeroSSL External account Binding failed: registering your email failed.');
+        }
+
+        return $eabCredentials->eab_kid;
     }
 
     private function installCertificate(CertificateResponse $response, array $actions)
